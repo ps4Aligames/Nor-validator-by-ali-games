@@ -1,0 +1,67 @@
+name: Build PS4 NOR Inspector v2 (Windows)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Build EXE
+        shell: pwsh
+        run: |
+          python -m PyInstaller --clean --noconfirm PS4_NOR_Inspector.spec
+          if (!(Test-Path 'dist/PS4_NOR_Inspector_v2.exe')) { throw 'EXE was not produced' }
+
+      - name: Create portable package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path portable | Out-Null
+          Copy-Item 'dist/PS4_NOR_Inspector_v2.exe' 'portable/PS4_NOR_Inspector_v2.exe'
+          Copy-Item 'README.md' 'portable/README.txt'
+          @'
+PS4 NOR Inspector v2 - Portable
+
+1. Run PS4_NOR_Inspector_v2.exe
+2. Open your NOR dump.
+3. Click Scan.
+4. Use Copy Diagnostic to share a safe diagnostic package with ChatGPT.
+
+Direct GPT analysis is optional and requires OPENAI_API_KEY.
+The portable EXE does not contain an API key.
+'@ | Set-Content 'portable/START_HERE.txt' -Encoding UTF8
+          Compress-Archive -Path 'portable/*' -DestinationPath 'PS4_NOR_Inspector_v2_Portable.zip' -Force
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PS4_NOR_Inspector_v2-Windows-x64
+          path: dist/PS4_NOR_Inspector_v2.exe
+          if-no-files-found: error
+
+      - name: Upload portable ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PS4_NOR_Inspector_v2-Portable-ZIP
+          path: PS4_NOR_Inspector_v2_Portable.zip
+          if-no-files-found: error
