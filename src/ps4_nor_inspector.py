@@ -243,17 +243,6 @@ def main():
     app = App()
     if args.file: app.load(os.path.abspath(args.file)); app.scan()
     app.mainloop()
-if __name__ == '__main__': main()
-    if args.file:
-        if not os.path.isfile(args.file):
-            raise SystemExit(f'File not found: {args.file}')
-        if args.json:
-            meta, checks, blocks, _ = scan_file(args.file)
-            print(json.dumps({'app': APP, 'version': VERSION, 'file': args.file, 'hashes': meta, 'checks': [asdict(x) for x in checks], 'entropy': blocks}, indent=2))
-        else:
-            app = App(); app.load(args.file); app.mainloop()
-    else:
-        App().mainloop()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
